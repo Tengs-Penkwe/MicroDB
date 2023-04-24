@@ -4,23 +4,42 @@ const std = @import("std");
 const stdin = std.io.getStdIn().reader();
 const stdout = std.io.getStdOut().writer();
 
+const rdl = @cImport({
+    @cInclude("stdio.h");
+    @cInclude("stdlib.h");
+    @cInclude("readline/readline.h");
+    // @cInclude("/opt/homebrew/opt/readline/include/readline/history.h");
+});
+
 const Inputs = struct {
     commands: std.ArrayList([]const u8),
 
     pub fn read_input(self: *@This(), allocator: std.mem.Allocator) !void {
         var buffer: [1024]u8 = undefined;
-        const length: usize = try stdin.readUntilDelimiterOrEof(&buffer, '\n');
-        const command = buffer[0..length];
+        const command = try stdin.readUntilDelimiterOrEof(&buffer, '\n');
 
-        if (!valid(command)) {
+        if ((command == null) or !valid(command.?)) {
             return;
         }
 
-        const copied_command = try allocator.dupe(u8, command);
+        const copied_command = try allocator.dupe(u8, command.?);
         try self.commands.append(copied_command);
+
+        // std.debug.print("{s}\n", .{copied_command});
+        // self.execute(copied_command);
     }
 
-    fn valid(command: []const u8) bool {
+    // fn execute(self: *@This(), command: []u8) !void {
+    //     //TODO: support up, down keys to lookthrough history
+    //     _ = self;
+    //     if (command == ".exit") {
+    //         std.os.exit(0);
+    //     } else {
+    //         stdout.print("Unrecognized command '{s}'.\n", .{command}) catch {};
+    //     }
+    // }
+
+    fn valid(command: []u8) bool {
         //TODO: test if the command is valid;
         _ = command;
         return true;
@@ -36,9 +55,14 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer {
-        //ALARM: deal with it
+        //TODO: deal with it
         _ = gpa.deinit();
     }
+
+    // const result = rdl.readline(">>> ");
+    // _ = result;
+
+    _ = rdl.printf("test");
 
     var inputs = Inputs{
         .commands = std.ArrayList([]const u8).init(allocator),
@@ -49,11 +73,3 @@ pub fn main() !void {
         try inputs.read_input(allocator);
     }
 }
-
-// pub fn close_input_buffer(input_buffer: *InputBuffer) void {
-//         allocator.free(buf);
-//     }
-//     allocator.destroy(input_buffer);
-// }
-//     if (input_buffer.buffer) |buf| {
-
