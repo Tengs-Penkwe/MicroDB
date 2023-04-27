@@ -1,3 +1,4 @@
+const std = @import("std");
 const Builder = @import("std").build.Builder;
 
 pub fn build(b: *Builder) void {
@@ -5,17 +6,22 @@ pub fn build(b: *Builder) void {
 
     const mode = b.standardReleaseOptions();
 
-    // const readlineLib = b.addStaticLibrary("readline", "")
-
     const exe = b.addExecutable("main", "main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.linkLibC();
-    exe.addIncludePath("/opt/homebrew/opt/readline/include");
-    exe.addLibraryPath("/opt/homebrew/opt/readline/lib");
-    exe.linkSystemLibrary("c");
+    switch (@import("builtin").os.tag) {
+        .macos => {
+            exe.addIncludePath("/opt/homebrew/opt/readline/include");
+            exe.addLibraryPath("/opt/homebrew/opt/readline/lib");
+        },
+        .linux => {
+            // exe.addIncludePath("/usr/local/include/readline/include");
+            // exe.addLibraryPath("/usr/local/include/readline/lib");
+        },
+        else => {},
+    }
     exe.linkSystemLibrary("readline");
-    // exe.linkSystemLibrary("readline");
     exe.install();
 
     const test_obj_step = b.addTest("src/main.zig");
