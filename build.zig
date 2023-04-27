@@ -22,6 +22,7 @@ pub fn build(b: *Builder) void {
         else => {},
     }
     exe.linkSystemLibrary("readline");
+    exe.linkSystemLibrary("curses");
     exe.install();
 
     const test_obj_step = b.addTest("src/main.zig");
