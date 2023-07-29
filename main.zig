@@ -4,13 +4,22 @@ const std = @import("std");
 const stdin = std.io.getStdIn().reader();
 const stdout = std.io.getStdOut().writer();
 
-const rdl = @cImport({
-    @cInclude("stdio.h");
-    @cInclude("stdlib.h");
-    @cInclude("readline/readline.h");
-    @cInclude("readline/history.h");
-});
+const InputBuffer = struct {
+    buffer: []u8,
+    buffer_length: usize,
+};
 
+fn readInput() !*InputBuffer {
+    var inputBuffer = InputBuffer{
+        .buffer = null,
+        .buffer_length = 0,
+    };
+
+    const result = try stdin.readUntilDelimiterOrEof(inputBuffer.buffer, '\n');
+    inputBuffer.buffer_length = result;
+
+    return inputBuffer;
+}
 
 pub fn main() !void {
     //Allocator
@@ -22,26 +31,15 @@ pub fn main() !void {
         _ = gpa.deinit();
     }
 
-    // Configure readline to auto-complete paths when the tab key is hit.
-    _ = rdl.rl_bind_key('\t', rdl.rl_complete);
-    // Enable history
-    _ = rdl.using_history();
-
-    // Completion
-    rdl.rl_attempted_completion_function = 
+    // var inputBuffer = InputBuffer{
+    //     .buffer = null,
+    //     .buffer_length = 0,
+    // };
 
     while (true) {
-      const line = rdl.readline("db > ");
-      defer rdl.free(line);
+        // try readInput(&inputBuffer);
+        // std.debug.print("\t here:{s}\n", .{line});
 
-      if (line == null) {
-        break;
-      }
-
-      rdl.add_history(line);
-
-      std.debug.print("\t here:{s}\n", .{line});
-
-      // try inputs.read_input(allocator);
+        // try inputs.read_input(allocator);
     }
 }
