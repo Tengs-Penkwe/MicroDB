@@ -27,7 +27,7 @@ pub const StatementType = enum {
 fn readInput(allocator: std.mem.Allocator) !InputBuffer {
     const line = try stdin.readUntilDelimiterAlloc(allocator, '\n', 1024);
 
-    std.debug.print("< {s} \n", .{line});
+    // std.debug.print("< {s} \n", .{line});
 
     return InputBuffer{
         .buffer = line,
@@ -48,28 +48,53 @@ fn do_meta_command(input: *InputBuffer) MetaCommandResult {
     }
 }
 
-fn prepare_statement(input: *InputBuffer) PrepareResult {
-    if (std.mem.eql(u8, input.buffer, "insert")) {} else {
-        return .META_COMMAND_UNRECOGNIZED_COMMAND;
+fn prepare_statement(input: *InputBuffer) struct {
+    prepare: PrepareResult,
+    state: ?StatementType,
+} {
+    if (std.mem.eql(u8, input.buffer, "insert")) {
+        return .{
+            .prepare = .PREPARE_SUCCESS,
+            .state = .STATEMENT_INSERT,
+        };
+    } else if (std.mem.eql(u8, input.buffer, "select")) {
+        return .{
+            .prepare = .PREPARE_SUCCESS,
+            .state = .STATEMENT_SELECT,
+        };
+    } else {
+        return .{
+            .prepare = .PREPARE_UNRECOGNIZED_STATEMENT,
+            .state = null,
+        };
     }
 }
 
 fn execute_statement(state: StatementType) void {
-    _ = state;
+    switch (state) {
+        .STATEMENT_INSERT => std.debug.print("This is where we would do an insert.\n", .{}),
+        .STATEMENT_SELECT => std.debug.print("This is where we would do an select.\n", .{}),
+    }
 }
 
 fn parse(input: *InputBuffer) void {
-    switch (do_meta_command(input)) {
-        .META_COMMAND_UNRECOGNIZED_COMMAND => std.debug.print("Unrecognized command '{s}'.\n", .{input.buffer}),
-
-        else => unreachable,
+    if (input.buffer[0] == '.') {
+        switch (do_meta_command(input)) {
+            .META_COMMAND_SUCCESS => {},
+            .META_COMMAND_UNRECOGNIZED_COMMAND => std.debug.print("Unrecognized command '{s}'.\n", .{input.buffer}),
+        }
     }
 
-    const statement = switch (prepare_statement(input)) {
-        else => 3,
+    const prepare = prepare_statement(input);
+    const statement = switch (prepare.prepare) {
+        .PREPARE_SUCCESS => prepare.state,
+        .PREPARE_UNRECOGNIZED_STATEMENT => {
+            std.debug.print("Unrecognized statement '{s}'.\n", .{input.buffer});
+            return;
+        },
     };
 
-    execute_statement(statement);
+    execute_statement(statement.?);
 
     return;
 }
@@ -78,16 +103,9 @@ pub fn main() !void {
     //Allocator
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
-    // _ = allocator;
     defer {
-        //TODO: deal with it
         _ = gpa.deinit();
     }
-
-    // var inputBuffer = InputBuffer{
-    //     .buffer = null,
-    //     .buffer_length = 0,
-    // };
 
     while (true) {
         try printPrompt();
