@@ -9,23 +9,76 @@ const InputBuffer = struct {
     buffer_length: usize,
 };
 
-fn readInput() !*InputBuffer {
-    var inputBuffer = InputBuffer{
-        .buffer = null,
-        .buffer_length = 0,
+pub const MetaCommandResult = enum {
+    META_COMMAND_SUCCESS,
+    META_COMMAND_UNRECOGNIZED_COMMAND,
+};
+
+pub const PrepareResult = enum {
+    PREPARE_SUCCESS,
+    PREPARE_UNRECOGNIZED_STATEMENT,
+};
+
+pub const StatementType = enum {
+    STATEMENT_INSERT,
+    STATEMENT_SELECT,
+};
+
+fn readInput(allocator: std.mem.Allocator) !InputBuffer {
+    const line = try stdin.readUntilDelimiterAlloc(allocator, '\n', 1024);
+
+    std.debug.print("< {s} \n", .{line});
+
+    return InputBuffer{
+        .buffer = line,
+        .buffer_length = line.len,
+    };
+}
+
+fn printPrompt() !void {
+    try stdout.print("db > ", .{});
+}
+
+fn do_meta_command(input: *InputBuffer) MetaCommandResult {
+    if (std.mem.eql(u8, input.buffer, ".exit")) {
+        std.debug.print("Exiting.\n", .{});
+        std.os.exit(1);
+    } else {
+        return .META_COMMAND_UNRECOGNIZED_COMMAND;
+    }
+}
+
+fn prepare_statement(input: *InputBuffer) PrepareResult {
+    if (std.mem.eql(u8, input.buffer, "insert")) {} else {
+        return .META_COMMAND_UNRECOGNIZED_COMMAND;
+    }
+}
+
+fn execute_statement(state: StatementType) void {
+    _ = state;
+}
+
+fn parse(input: *InputBuffer) void {
+    switch (do_meta_command(input)) {
+        .META_COMMAND_UNRECOGNIZED_COMMAND => std.debug.print("Unrecognized command '{s}'.\n", .{input.buffer}),
+
+        else => unreachable,
+    }
+
+    const statement = switch (prepare_statement(input)) {
+        else => 3,
     };
 
-    const result = try stdin.readUntilDelimiterOrEof(inputBuffer.buffer, '\n');
-    inputBuffer.buffer_length = result;
+    execute_statement(statement);
 
-    return inputBuffer;
+    return;
 }
 
 pub fn main() !void {
     //Allocator
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    _ = allocator;
+    var allocator = gpa.allocator();
+    // _ = allocator;
     defer {
         //TODO: deal with it
         _ = gpa.deinit();
@@ -37,8 +90,10 @@ pub fn main() !void {
     // };
 
     while (true) {
-        // try readInput(&inputBuffer);
-        // std.debug.print("\t here:{s}\n", .{line});
+        try printPrompt();
+        var input = try readInput(allocator);
+
+        parse(&input);
 
         // try inputs.read_input(allocator);
     }
