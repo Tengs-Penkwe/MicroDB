@@ -12,8 +12,8 @@ pub fn build(b: *Builder) void {
     exe.linkLibC();
     switch (@import("builtin").os.tag) {
         .macos => {
-            exe.addIncludePath("/opt/homebrew/opt/readline/include");
-            exe.addLibraryPath("/opt/homebrew/opt/readline/lib");
+            // exe.addIncludePath("/opt/homebrew/opt/readline/include");
+            // exe.addLibraryPath("/opt/homebrew/opt/readline/lib");
         },
         .linux => {
             // exe.addIncludePath("/usr/local/include/readline/include");
@@ -21,8 +21,8 @@ pub fn build(b: *Builder) void {
         },
         else => {},
     }
-    exe.linkSystemLibrary("readline");
-    exe.linkSystemLibrary("curses");
+    // exe.linkSystemLibrary("readline");
+    // exe.linkSystemLibrary("curses");
     exe.install();
 
     const test_obj_step = b.addTest("src/main.zig");
